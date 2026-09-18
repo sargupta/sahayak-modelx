@@ -35,6 +35,20 @@ See [`invoke_example.py`](invoke_example.py). Payload shape:
  "max_tokens":300, "temperature":0.0}
 ```
 
+## One-command deploy
+Use [`deploy_endpoint.py`](deploy_endpoint.py) — it bakes in the working config (lmi28 + official
+base + chat template). No secrets (account from STS, region + role via flags/env):
+```bash
+AWS_PROFILE=<profile> python deploy_endpoint.py deploy   --region ap-south-1
+AWS_PROFILE=<profile> python deploy_endpoint.py test     --region ap-south-1   # chat-format probe
+AWS_PROFILE=<profile> python deploy_endpoint.py teardown --region ap-south-1   # ALWAYS when idle
+```
+**Region reality (important):** bf16 30B needs `ml.g5.12xlarge` (4× A10G / 96 GB). That quota is
+granted in **ap-south-1 (Mumbai)** but is **0 in us-east-1** — where only g5.xlarge/g5.4xlarge/g4dn
+(≤24 GB) are available, **too small for bf16 30B**. So: serve in **Mumbai**, or request g5.12xlarge
+quota in your region, or serve a **4-bit** Sarvam-30B on g5.4xlarge (untested with the chat template
+— verify). And use the **lmi28** image, never lmi10/0.28 (old vLLM → ping-health-check failure).
+
 ## Open serving items
 - **Scale-to-zero** isn't wired on a plain ProductionVariant — rebuild as **inference components**
   (`ManagedInstanceScaling` + `create_inference_component`, MinInstanceCount=0) to kill idle cost.

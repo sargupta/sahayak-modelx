@@ -16,7 +16,9 @@ def main():
     dtype = None
     load_in_4bit = True
 
-    model_name = "unsloth/Qwen3.5-4B"
+    # FIXED: "unsloth/Qwen3.5-4B" does not exist (no Qwen3.5; Qwen2.5 has no 4B — sizes are 0.5/1.5/3/7/14/32/72).
+    # Verified-real small repo below; VERIFY on unsloth's HF if you change it.
+    model_name = "unsloth/Qwen2.5-3B-Instruct-bnb-4bit"
 
     print(f"Loading {model_name} in 4-bit...")
     model, tokenizer = FastLanguageModel.from_pretrained(
@@ -31,11 +33,10 @@ def main():
     model = FastLanguageModel.get_peft_model(
         model,
         r=16,
+        # FIXED: previous names are Mamba/SSM modules, not Qwen — LoRA attached to nothing.
         target_modules=[
-            "in_proj_qkv",
-            "out_proj",
-            "in_proj_z",
-            "in_proj_b",
+            "q_proj", "k_proj", "v_proj", "o_proj",
+            "gate_proj", "up_proj", "down_proj",
         ],
         lora_alpha=32,
         lora_dropout=0.0,
@@ -52,9 +53,10 @@ def main():
         texts = [tokenizer.apply_chat_template(convo, tokenize=False, add_generation_prompt=False) for convo in convs]
         return {"text": texts}
 
-    full_dataset = load_dataset("json", data_files="/home/psx/Documents/finetuning/final bengal.jsonl", split="train")
-    sampled_dataset = full_dataset.train_test_split(test_size=0.5, seed=3407)["train"]
-    dataset = sampled_dataset.map(format_prompts, batched=True)
+    # FIXED: relative path (was a machine-specific absolute path); and test_size=0.5 wasted half the data.
+    full_dataset = load_dataset("json", data_files="final bengal.jsonl", split="train")
+    split = full_dataset.train_test_split(test_size=0.05, seed=3407)   # 95% train, 5% held-out
+    dataset = split["train"].map(format_prompts, batched=True)
 
     max_len_kwarg = {"max_length": max_seq_length} if parse_version(trl.__version__) >= parse_version("0.16.0") else {"max_seq_length": max_seq_length}
 
@@ -71,7 +73,7 @@ def main():
             gradient_accumulation_steps=16,
             warmup_steps=10,
             num_train_epochs=1.5,
-            learning_rate=2e-5,
+            learning_rate=2e-4,  # FIXED: LoRA wants ~2e-4 (2e-5 underfits)
             lr_scheduler_type="cosine",
             fp16=not torch.cuda.is_bf16_supported(),
             bf16=torch.cuda.is_bf16_supported(),

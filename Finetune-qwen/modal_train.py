@@ -55,7 +55,9 @@ def train():
     dtype = None
     load_in_4bit = True
 
-    model_name = "unsloth/Qwen3.5-9B"
+    # FIXED: "unsloth/Qwen3.5-9B" does not exist (no Qwen3.5; Qwen has no 9B size).
+    # Verified-real repo below. Prefer a Qwen3 repo? VERIFY it on unsloth's HF first.
+    model_name = "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
 
     print(f"Loading {model_name} onto Modal A10G GPU...")
     model, tokenizer = FastLanguageModel.from_pretrained(
@@ -69,11 +71,11 @@ def train():
     model = FastLanguageModel.get_peft_model(
         model,
         r=16,
+        # FIXED: previous names (in_proj_qkv/out_proj/in_proj_z/in_proj_b) are Mamba/SSM modules,
+        # NOT Qwen. LoRA would attach to nothing. These are the correct Qwen transformer modules:
         target_modules=[
-            "in_proj_qkv",
-            "out_proj",
-            "in_proj_z",
-            "in_proj_b",
+            "q_proj", "k_proj", "v_proj", "o_proj",
+            "gate_proj", "up_proj", "down_proj",
         ],
         lora_alpha=32,
         lora_dropout=0.0,
@@ -100,8 +102,11 @@ def train():
         "json", data_files="/data/final_bengal.jsonl", split="train"
     )
 
-    sampled_dataset = full_dataset.train_test_split(test_size=0.5, seed=3407)["train"]
-    dataset = sampled_dataset.map(format_prompts, batched=True)
+    # FIXED: test_size=0.5 trained on only HALF the data (and discarded the rest).
+    # Use 95% for training and hold out 5% for eval.
+    split = full_dataset.train_test_split(test_size=0.05, seed=3407)
+    dataset = split["train"].map(format_prompts, batched=True)
+    eval_dataset = split["test"].map(format_prompts, batched=True)
 
     max_len_kwarg = (
         {"max_length": max_seq_length}
@@ -122,7 +127,7 @@ def train():
             gradient_accumulation_steps=8,
             warmup_steps=10,
             num_train_epochs=1.5,
-            learning_rate=2e-5,
+            learning_rate=2e-4,  # FIXED: 2e-5 is full-finetune territory; LoRA wants ~2e-4
             lr_scheduler_type="cosine",
             fp16=not torch.cuda.is_bf16_supported(),
             bf16=torch.cuda.is_bf16_supported(),
