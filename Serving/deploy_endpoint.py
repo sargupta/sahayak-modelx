@@ -43,7 +43,7 @@ def cmd_deploy(a):
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     model, cfg = f"{ENDPOINT}-{stamp}", f"{ENDPOINT}-cfg-{stamp}"
     env = {
-        **({"OPTION_MODEL_ID": MODEL_S3} if MODEL_S3 else {"HF_MODEL_ID": HF_MODEL}),   # LMI pulls s3:// prefixes directly
+        "HF_MODEL_ID": MODEL_S3 or HF_MODEL,   # LMI accepts an s3:// prefix here; OPTION_MODEL_ID alone registers NO model (seen 2026-09-22)
         "OPTION_ROLLING_BATCH": "vllm",
         "OPTION_TENSOR_PARALLEL_DEGREE": "max",
         "OPTION_TRUST_REMOTE_CODE": "true",   # sarvam_moe custom arch
