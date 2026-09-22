@@ -43,10 +43,18 @@ class MockLLMClient(BaseLLMClient):
         system_instruction: Optional[str] = None,
         temperature: float = 0.2,
     ) -> T:
-        for key, val in self.predefined_responses.items():
-            if key in prompt:
-                if isinstance(val, dict):
-                    return response_schema.model_validate(val)
+        if self.predefined_responses:
+            try:
+                return response_schema.model_validate(self.predefined_responses)
+            except Exception:
+                pass
+            for key, val in self.predefined_responses.items():
+                if key in prompt:
+                    if isinstance(val, dict):
+                        try:
+                            return response_schema.model_validate(val)
+                        except Exception:
+                            pass
 
         # Fallback dummy construction based on schema name
         schema_name = response_schema.__name__
@@ -84,8 +92,11 @@ class MockLLMClient(BaseLLMClient):
             for fname, finfo in fields.items():
                 if finfo.is_required():
                     import typing
+                    import enum
                     origin = typing.get_origin(finfo.annotation)
-                    if finfo.annotation == str:
+                    if isinstance(finfo.annotation, type) and issubclass(finfo.annotation, enum.Enum):
+                        constructed[fname] = list(finfo.annotation)[0].value
+                    elif finfo.annotation == str:
                         constructed[fname] = f"mock_{fname}"
                     elif finfo.annotation == bool:
                         constructed[fname] = True

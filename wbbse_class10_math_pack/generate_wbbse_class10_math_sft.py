@@ -1,11 +1,3 @@
-"""
-generate_wbbse_class10_math_sft.py
-Standalone Synthetic SFT Generator for WBBSE Class 10 Mathematics (Ganit Prakash Class X)
-
-Usage:
-    python generate_wbbse_class10_math_sft.py --target 1000 --workers 8
-    python generate_wbbse_class10_math_sft.py --key YOUR_OPENROUTER_KEY --target 2000
-"""
 
 import os
 import sys
@@ -20,9 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-# API keys come ONLY from the environment (OPENROUTER_API_KEY, comma-separated for a pool)
-# or from --key. Never commit keys to this repository.
-DEFAULT_OPENROUTER_KEYS: list = []
+# Models for generation
 
 DEFAULT_MODELS = [
     "inclusionai/ling-3.0-flash-sante:free",
@@ -166,11 +156,10 @@ def main():
 
     print(f"Loaded {len(chunks)} clean grounded textbook chunks.")
 
-    key_pool = [k.strip() for k in os.environ.get("OPENROUTER_API_KEY", "").split(",") if k.strip()]
-    if args.key:
-        key_pool.insert(0, args.key)
-    if not key_pool:
-        sys.exit("No OpenRouter API key: set OPENROUTER_API_KEY (comma-separated for a pool) or pass --key.")
+    api_key = args.key or os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY not found. Please set OPENROUTER_API_KEY in your environment or pass --key.")
+    key_pool = [k.strip() for k in api_key.split(",") if k.strip()]
 
     existing_ids = set()
     cand_path = os.path.join(script_dir, args.out_cand)
@@ -228,3 +217,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

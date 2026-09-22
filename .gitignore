@@ -124,8 +124,6 @@ wbbse_final_source_manifest.json
 wbbse_source_quality_audit.json
 semantic_dedup_audit_v2.json
 *.jsonl
-!Final/*.jsonl
-!datasets/final_grounding_corpus/*.jsonl
 
 # Non-WB Board / CBSE / Interim Packs & Auxiliary Folders
 cbse_bengali_generator_pack/
@@ -142,41 +140,10 @@ sarg_lm.ipynb
 sarg_lm_export.ipynb
 
 # Auxiliary & One-off generator scripts
-_save_validator.py
-agent_runner.py
-build_chatml_sft_2000.py
-build_exact_3field_sft_2000.py
-build_full_part1_1500_corpus.py
-chat_sarg.py
-compile_aikosh_valuable.py
-compile_dataset.py
-crawl_aikosh_datasets.py
-create_part1_excel.py
-create_structured_excel.py
-create_wbbse_topic_indices.py
-create_wbbse_zip.py
-download_missing_class_9_10.py
-export_sft_formats.py
-finalize_500_and_2655.py
-generate_10k_dataset.py
-generate_500_part1_extension.py
-generate_api_sft_2000.py
-generate_comprehensive_spectrum_dataset.py
-generate_extensive_persona_dataset.py
-generate_localised_context_dataset.py
-generate_localised_socratic_simulation.py
-generate_monolingual_native_script_dataset.py
-generate_part1_dataset.py
-generate_part1_manifest.py
-organize_wbbse_pdfs.py
-persona_experimenter.py
-persona_lab_web.py
-run_part1_pilot.py
-stm_fast_extract.py
-tesseract_fast_extract.py
-ultra_fast_tesseract_61.py
-wbbse_extract.py
-wbbse_final_4.py
+/*.py
+!/run_tests.py
+bengali_corrupted_row_regeneration_detailed_spec.md
+sample_inspection.json
 
 # Datasets directory: Ignore all subdirectories except final_grounding_corpus
 datasets/*
