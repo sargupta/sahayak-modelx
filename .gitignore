@@ -197,3 +197,6 @@ DataEngine/out/*
 Finetune/.venv-smoke/
 Finetune/.smoke_local.ok
 Finetune/out/
+
+# eval results (per run; keep out of git)
+Evaluation/wb_eval/results/

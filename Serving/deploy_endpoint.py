@@ -25,6 +25,7 @@ ENDPOINT = os.environ.get("SM_ENDPOINT", "sahayak-30b")
 ROLE_NAME = os.environ.get("SM_ROLE", "sahayak-sagemaker-exec")
 INSTANCE = os.environ.get("SM_INSTANCE", "ml.g5.12xlarge")   # bf16 30B needs 4x A10G
 HF_MODEL = os.environ.get("SM_HF_MODEL", "sarvamai/Sarvam-30B")  # official Apache-2.0 base
+MODEL_S3 = os.environ.get("SM_MODEL_S3", "")   # e.g. s3://sagemaker-sahayak-aps1/models/sahayak-ft-v1-ep1/ (merged weights); overrides HF_MODEL
 DLC_ACCT = "763104351884"
 
 
@@ -42,7 +43,7 @@ def cmd_deploy(a):
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     model, cfg = f"{ENDPOINT}-{stamp}", f"{ENDPOINT}-cfg-{stamp}"
     env = {
-        "HF_MODEL_ID": HF_MODEL,
+        **({"OPTION_MODEL_ID": MODEL_S3} if MODEL_S3 else {"HF_MODEL_ID": HF_MODEL}),   # LMI pulls s3:// prefixes directly
         "OPTION_ROLLING_BATCH": "vllm",
         "OPTION_TENSOR_PARALLEL_DEGREE": "max",
         "OPTION_TRUST_REMOTE_CODE": "true",   # sarvam_moe custom arch
@@ -50,7 +51,7 @@ def cmd_deploy(a):
         "OPTION_MAX_MODEL_LEN": "4096",
         # NO OPTION_QUANTIZE — this is the bf16 base.
     }
-    print(f"[image] {image}\n[model] {HF_MODEL} -> {ENDPOINT} ({INSTANCE}, {a.region})")
+    print(f"[image] {image}\n[model] {MODEL_S3 or HF_MODEL} -> {ENDPOINT} ({INSTANCE}, {a.region})")
     sm.create_model(ModelName=model, ExecutionRoleArn=role,
                     PrimaryContainer={"Image": image, "Environment": env})
     sm.create_endpoint_config(EndpointConfigName=cfg, ProductionVariants=[{
