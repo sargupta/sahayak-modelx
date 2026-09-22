@@ -43,9 +43,15 @@ def strip_think(text):
     return re.sub(r"<think>.*?</think>\s*", "", text, flags=re.S).strip()
 
 
-def ask(smr, endpoint, messages, max_tokens, system=None):
+PREFILL = "<think></think>\n"
+
+
+def ask(smr, endpoint, messages, max_tokens, system=None, prefill=False):
     msgs = ([{"role": "system", "content": system}] if system else []) + messages
-    body = json.dumps({"messages": msgs, "max_tokens": max_tokens, "temperature": 0.0})
+    b = {"messages": msgs, "max_tokens": max_tokens, "temperature": 0.0}
+    if prefill:
+        b["messages"] = msgs + [{"role": "assistant", "content": PREFILL}]; b["continue_final_message"] = True; b["add_generation_prompt"] = False
+    body = json.dumps(b)
     for attempt in range(3):
         try:
             r = smr.invoke_endpoint(EndpointName=endpoint, ContentType="application/json", Body=body)
@@ -80,7 +86,7 @@ def main():
     ap.add_argument("--endpoint", required=True); ap.add_argument("--region", default="ap-south-1"); ap.add_argument("--tag", required=True)
     ap.add_argument("--max-tokens", type=int, default=700); ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--system", default="", help="optional system prompt (the fine-tune was trained with the compiler's SYSTEM_BN)")
-    ap.add_argument("--out", default=os.path.join(HERE, "results"))
+    ap.add_argument("--out", default=os.path.join(HERE, "results")); ap.add_argument("--prefill", action="store_true", help="prefill an empty <think></think>")
     a = ap.parse_args()
     probes = FORMAT_PROBES[:]
     for f in ("local_probes.jsonl", "analogy_traps.jsonl"):
@@ -90,7 +96,7 @@ def main():
     smr = boto3.client("sagemaker-runtime", region_name=a.region); os.makedirs(a.out, exist_ok=True)
     rows = []; t0 = time.time()
     for i, p in enumerate(probes):
-        t1 = time.time(); raw, ans = ask(smr, a.endpoint, p["input_messages"], a.max_tokens, a.system or None)
+        t1 = time.time(); raw, ans = ask(smr, a.endpoint, p["input_messages"], a.max_tokens, a.system or None, a.prefill)
         s = score(p, ans); rows.append({"id": p["id"], "task_family": p.get("task_family"), "zone": p.get("zone"), "expected": p.get("expected"),
                                          "answer": ans, "raw_len": len(raw), "latency_s": round(time.time() - t1, 1), **s})
         print(f"[{i + 1}/{len(probes)}] {p['id']:34s} pass={s['pass']} steps={s['step_leak']} bn={s['bengali_digit_share']} {round(time.time() - t1, 1)}s", flush=True)

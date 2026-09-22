@@ -38,10 +38,16 @@ def system_prompt():
     return "".join(re.findall(r'"([^"]*)"', m.group(1))) if m else ""
 
 
-def ask(smr, endpoint, prompt, system, max_tokens):
+PREFILL = "<think></think>\n"   # empty reasoning block: the model then answers directly (LMI ignores enable_thinking=false; verified 2026-09-22)
+
+
+def ask(smr, endpoint, prompt, system, max_tokens, prefill=False):
     msgs = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
+    body = {"messages": msgs, "max_tokens": max_tokens, "temperature": 0.0}
+    if prefill:
+        body["messages"] = msgs + [{"role": "assistant", "content": PREFILL}]; body["continue_final_message"] = True; body["add_generation_prompt"] = False
     t = time.time()
-    r = smr.invoke_endpoint(EndpointName=endpoint, ContentType="application/json", Body=json.dumps({"messages": msgs, "max_tokens": max_tokens, "temperature": 0.0}))
+    r = smr.invoke_endpoint(EndpointName=endpoint, ContentType="application/json", Body=json.dumps(body))
     raw = json.loads(r["Body"].read())["choices"][0]["message"]["content"]
     ans = re.sub(r"<think>.*?</think>\s*", "", raw, flags=re.S).strip()
     return ans, len(raw) - len(ans), round(time.time() - t, 1)
@@ -57,19 +63,19 @@ def flags(ans):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ft", required=True); ap.add_argument("--base", default=None); ap.add_argument("--region", default="ap-south-1")
-    ap.add_argument("--max-tokens", type=int, default=900); ap.add_argument("--no-system", action="store_true")
+    ap.add_argument("--max-tokens", type=int, default=900); ap.add_argument("--no-system", action="store_true"); ap.add_argument("--prefill", action="store_true", help="prefill an empty <think></think> so every family answers directly")
     ap.add_argument("--out", default=os.path.join(HERE, "results", f"demo_outputs_{time.strftime('%Y%m%d-%H%M')}.md"))
     a = ap.parse_args(); os.makedirs(os.path.dirname(a.out), exist_ok=True)
     smr = boto3.client("sagemaker-runtime", region_name=a.region); system = "" if a.no_system else system_prompt()
     lines = [f"# SahayakAI-30 · base vs fine-tune (epoch 1) · {time.strftime('%Y-%m-%d %H:%M')} IST", "",
-             f"ft = `{a.ft}`" + (f" · base = `{a.base}`" if a.base else "") + f" · region {a.region} · temperature 0 · system prompt {'off' if a.no_system else 'on (compiler SYSTEM_BN)'}", ""]
+             f"ft = `{a.ft}`" + (f" · base = `{a.base}`" if a.base else "") + f" · region {a.region} · temperature 0 · system prompt {'off' if a.no_system else 'on (compiler SYSTEM_BN)'} · prefill {'on' if a.prefill else 'off'}", ""]
     for i, (label, prompt) in enumerate(PROMPTS, 1):
         lines += [f"## {i}. {label}", "", f"**প্রশ্ন:** {prompt}", ""]
         for name, ep in (("fine-tune", a.ft), ("base", a.base)):
             if not ep:
                 continue
             try:
-                ans, think_chars, lat = ask(smr, ep, prompt, system, a.max_tokens)
+                ans, think_chars, lat = ask(smr, ep, prompt, system, a.max_tokens, a.prefill)
                 lines += [f"**{name}** · {lat}s · think trace stripped: {think_chars} chars · {flags(ans)}", "", "```", ans, "```", ""]
                 print(f"[{i}/{len(PROMPTS)}] {name:9s} {lat}s think={think_chars} {flags(ans)}", flush=True)
             except Exception as e:
