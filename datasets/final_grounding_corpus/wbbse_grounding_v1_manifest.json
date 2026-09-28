@@ -1,26 +1,27 @@
 {
-  "manifest_version": "1.0.0",
+  "manifest_version": "1.1.0",
   "corpus_name": "wbbse_grounding_v1",
-  "created_at": "2026-09-14T11:05:00Z",
+  "updated_at": "2026-09-22T12:00:00Z",
+  "coverage_threshold_per_chapter": 15,
   "source_files": {
-    "wbbse_sft_source_pool.jsonl": {
-      "records": 1649,
-      "sha256": "a71f25865585bc992aed29c1d9e026d8c333a77636bfdf33843125a462841147",
-      "description": "Frozen verified WBBSE textbook text chunks across Classes 6-10"
-    },
     "grounding_chunks_text_only.jsonl": {
-      "records": 4029,
-      "sha256": "a65012a35705aadfa65128fedca4f0942e9a52e1a1bdec5c1de641ec999489d1",
-      "description": "All-board extracted text chunks (WBBPE, WBBSE, WBCHSE)"
+      "records": 8842,
+      "sha256": "1d56812fb00d9c9ed5a01cd8e823db587a86b3d80d82772eae5ab62cfa907097",
+      "description": "All-board text-only grounding chunks with filled thin cells (v1.1)"
     },
     "grounding_chunks_visual_context.jsonl": {
-      "records": 9885,
-      "sha256": "27cf2e1400fd70bfc3010f8bd943a596162000760bcc28da5b16efba39f17849",
+      "records": 6742,
+      "sha256": "8dfcd40e888e7b9b60f82761db7daf301aafeae428a44b603e6e2831de3b5d66",
       "description": "Visual grounding chunks with paired bounding boxes"
     },
+    "wbbse_sft_source_pool.jsonl": {
+      "records": 1277,
+      "sha256": "4be09622a455e3351caa5c0edddc96e4858df9ea00ba835353a4ec2fac29dbdf",
+      "description": "Frozen verified WBBSE textbook text chunks across Classes 6-10"
+    },
     "excluded_archive.jsonl": {
-      "records": 5652,
-      "sha256": "7c7e48d3e23a8a115f42ea35cf671a293a87bec3d1cceeb8568efca71be5b7a9",
+      "records": 10501,
+      "sha256": "9dd63d4b5e6356355aa11f10864e3afc45778b6fd7d6137b65e534e080d3b551",
       "description": "Quarantined noisy or excluded structural units"
     }
   }

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Part 1 Dataset Schema Definitions (Structured JSON Edition).
 Implements the 48-rule specification for Structured-JSON Part 1 SFT Dataset.
 """
@@ -30,6 +30,17 @@ class SourceMetadata(BaseModel):
     source_mode: Literal["TEXTBOOK_GROUNDED", "TEXTBOOK_PLUS_LOCALE"] = "TEXTBOOK_GROUNDED"
     textbook_source_chunks: List[str] = Field(default_factory=list)
     visual_dependency: Literal["NONE", "SUPPORTIVE", "REQUIRED"] = "NONE"
+
+class RecordProvenance(BaseModel):
+    generator_model: str = Field(..., description="Model identifier used for generation (e.g., qwen2.5-72b-instruct)")
+    provider: str = Field(..., description="API or inference provider (e.g., openrouter, groq, vllm, deepseek)")
+    licence: str = Field(default="CC-BY-4.0", description="Data license or open license terms")
+    chunk_ids: List[str] = Field(default_factory=list, description="IDs of textbook grounding chunks used")
+    locale_keys: List[str] = Field(default_factory=list, description="Keys/facts extracted from locale.json")
+    validator_version: str = Field(default="1.0.0", description="Automated validator pipeline version")
+    teacher_id: Optional[str] = Field(default=None, description="Identifier of human educator if reviewed")
+    quarantined: bool = Field(default=False, description="Flag if quarantined pending license resolution")
+    quarantine_reason: Optional[str] = Field(default=None, description="Reason for quarantine if applicable")
 
 class LocalContextMetadata(BaseModel):
     mode: Literal["NONE", "GENERIC_STATE", "REGION", "DISTRICT", "SCHOOL_SETTING"] = "NONE"
@@ -125,5 +136,6 @@ class Part1StructuredSFTRecord(BaseModel):
     curriculum: CurriculumMetadata
     source: SourceMetadata
     local_context: LocalContextMetadata
+    provenance: Optional[RecordProvenance] = None
     messages: List[StructuredMessage]
     validation: ValidationScores = Field(default_factory=ValidationScores)

@@ -40,6 +40,11 @@ class GroundingCompatibilityGate:
         re.compile(r'see\s+the\s+picture\s+above|look\s+at\s+the\s+given\s+diagram', re.IGNORECASE)
     ]
 
+    OCR_CORRUPTION_PATTERNS = [
+        re.compile(r'(?:^|\s)[\u09BE-\u09CD\u09D7]+(?:\s|$)'),
+        re.compile(r'\b(অধ\s*:\s*বয|বয\s+অধ|ঐত\s+পট|রাজন\s+তর|উপন\s+সন|সম\s+রকদ|আধ\s+রতের)\b')
+    ]
+
     def __init__(self, min_overlap_threshold: float = 0.2):
         self.min_overlap_threshold = min_overlap_threshold
 
@@ -79,14 +84,15 @@ class GroundingCompatibilityGate:
 
         target_board = self.resolve_board_authority(target_grade if target_grade is not None else grade)
 
-        # 1. Administrative Debris Check (Score 0)
+        # 1. Administrative Debris & OCR Corruption Check (Score 0)
         admin_match_count = sum(1 for p in self.ADMIN_PATTERNS if p.search(source_text))
-        if admin_match_count >= 2 or len(source_text.strip()) < 35:
+        ocr_corrupt_count = sum(1 for p in self.OCR_CORRUPTION_PATTERNS if p.search(source_text))
+        if admin_match_count >= 2 or ocr_corrupt_count > 0 or len(source_text.strip()) < 35:
             return CompatibilityResult(
                 is_compatible=False,
                 status="REJECT",
                 curriculum_fidelity_score=0,
-                reasons=["Source chunk contains administrative/publication debris or insufficient content."],
+                reasons=["Source chunk contains administrative debris, insufficient content, or broken OCR glyphs/orphaned matras."],
                 suggested_action="RETRY_RETRIEVAL",
                 board_authority=target_board
             )

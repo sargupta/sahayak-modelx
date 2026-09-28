@@ -24,6 +24,8 @@ class GroundingFirstValidator:
     RAW_EXCERPT_PATTERN = re.compile(r'^\s*(পাঠ্যাংশ|অনুচ্ছেদ|Textbook Passage)\s*[:ঃ]', re.MULTILINE)
     META_LEAKAGE_PATTERN = re.compile(r'প্রদত্ত\s+পাঠ্যাংশ(ে|টির)?|উক্ত\s+পাঠ্যাংশ(ে|টির)?|প্রদত্ত\s+অনুচ্ছেদ(ে)?')
     ASCII_DIGITS_PATTERN = re.compile(r'(?<![a-zA-Z_\^\$\{\}\\])\b\d+\b(?![a-zA-Z_\^\$\{\}\\])')
+    ORPHAN_MATRA_PATTERN = re.compile(r'(?:^|\s)[\u09BE-\u09CD\u09D7]+(?:\s|$)')
+    BROKEN_STEM_PATTERN = re.compile(r'\b(অধ\s*:\s*বয|বয\s+অধ|ঐত\s+পট|রাজন\s+তর|উপন\s+সন|সম\s+রকদ|আধ\s+রতের)\b')
 
     def __init__(self):
         self.stats = {
@@ -42,7 +44,8 @@ class GroundingFirstValidator:
                 "TIER_7_TASK_FIDELITY": 0,
                 "TIER_8_MATH_SCIENTIFIC_INTEGRITY": 0,
                 "TIER_9_SELF_CONTAINEDNESS": 0,
-                "TIER_10_COMPLETENESS": 0
+                "TIER_10_COMPLETENESS": 0,
+                "TIER_OCR_INTEGRITY": 0
             }
         }
 
@@ -116,6 +119,14 @@ class GroundingFirstValidator:
         # Tier 9: Self-Containedness
         if "পাশের চিত্রে" in asst_content or "প্রদত্ত মানচিত্রে" in asst_content:
             warnings.append("Response mentions external figures/maps; verify visual asset availability.")
+
+        # Tier OCR Integrity: Reject broken Bengali OCR artifacts and orphaned matras
+        if self.ORPHAN_MATRA_PATTERN.search(asst_content) or self.BROKEN_STEM_PATTERN.search(asst_content):
+            errors.append("Assistant response contains broken Bengali OCR characters or orphaned matras.")
+            tier_failures.append("TIER_OCR_INTEGRITY")
+        if self.ORPHAN_MATRA_PATTERN.search(user_content) or self.BROKEN_STEM_PATTERN.search(user_content):
+            errors.append("User query contains broken Bengali OCR characters or orphaned matras.")
+            tier_failures.append("TIER_OCR_INTEGRITY")
 
         # Tier 10: Completeness
         if not asst_content.endswith(("।", "?", "!", ".", "”", "'", "’", "\n")):

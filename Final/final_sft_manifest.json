@@ -1,0 +1,47 @@
+{
+  "manifest_version": "1.0.0",
+  "corpus_name": "sahayak_sft_master_v1",
+  "created_at": "2026-09-19T10:00:00Z",
+  "source_files": {
+    "final_merged_dataset.jsonl": {
+      "records": 3000,
+      "size_bytes": 36821334,
+      "sha256": "42d535ad5a24a7a0b000e0b88e67e82f81921618abcb3a5037a52da87e4b9818"
+    },
+    "gold_standard_sft_2000_api.jsonl": {
+      "records": 2000,
+      "size_bytes": 22936722,
+      "sha256": "5b3115ce088d2a7ce903ddfeaf9d93700d4b5d115eaaf3c1781693e06469a9eb"
+    },
+    "part1_additional_salvage_new_passable_100.jsonl": {
+      "records": 100,
+      "size_bytes": 1015561,
+      "sha256": "413c317486e3bd80e79a3a217bb4b570df1ac3538bf87be061bd4032099b11aa"
+    },
+    "part1_good_records_unique_57.jsonl": {
+      "records": 57,
+      "size_bytes": 1138552,
+      "sha256": "44b6fc5d5f31754d0fb8bfe0f26a17c69d4502de73b147324d3879241c82dc4a"
+    },
+    "part1_sft_best_records_curated.jsonl": {
+      "records": 164,
+      "size_bytes": 824532,
+      "sha256": "d9382ae2e019b436c4dcbe325e55af12056cbadcde7bbe69b1272a7be5c8130b"
+    },
+    "part1_strict_good_records_45.jsonl": {
+      "records": 45,
+      "size_bytes": 790292,
+      "sha256": "37c983939495495c2a40f6aef1f5139a6e8bfda48ef1d19d2f30423fc20e42d9"
+    },
+    "sft_155_additional_chatml.jsonl": {
+      "records": 155,
+      "size_bytes": 2228822,
+      "sha256": "d5e8bbe23efbf09a66312d1537500afe87aa12018818d9362276abf3f8189d84"
+    },
+    "sft_500_expansion.jsonl": {
+      "records": 500,
+      "size_bytes": 6165515,
+      "sha256": "258a77044aec36ca730b7d5498e722e13c99dd44e453a4506fcd74cc9b0d9ac1"
+    }
+  }
+}
